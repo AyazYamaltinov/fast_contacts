@@ -180,6 +180,8 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                 selectedFields = fields
                 allContacts = emptyList()
 
+                contentResolver.notifyChange(ContactsContract.Contacts.CONTENT_URI, null)
+
                 val partialContacts = ConcurrentHashMap<ContactPart, Collection<Contact>>()
                 val fetchCompletionLatch = CountDownLatch(contactParts.size)
 
@@ -326,6 +328,7 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
     // Метод для получения ID контактов из ContactsContract.Contacts
     private fun fetchPhoneBookContactIds(): Set<String> {
         val contactIds = mutableSetOf<String>()
+        contentResolver.notifyChange(ContactsContract.Contacts.CONTENT_URI, null)
         val selection = "${ContactsContract.Contacts.IN_VISIBLE_GROUP} = 1"
         val cursor = ContentResolverCompat.query(
             contentResolver,
