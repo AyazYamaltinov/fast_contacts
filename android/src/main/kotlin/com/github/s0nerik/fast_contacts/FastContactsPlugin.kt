@@ -178,6 +178,7 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                 val contactParts = ContactPart.fromFields(fields)
 
                 selectedFields = fields
+                allContacts = emptyList()
 
                 val partialContacts = ConcurrentHashMap<ContactPart, Collection<Contact>>()
                 val fetchCompletionLatch = CountDownLatch(contactParts.size)
@@ -197,20 +198,6 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                 allContactsExecutor.execute {
                     fetchCompletionLatch.await()
                     withResultDispatcher(result) {
-//                        val mergedContacts = mutableMapOf<String, Contact>()
-//                        for (part in partialContacts.values.flatten()) {
-//                            val existing = mergedContacts[part.id]
-//                            if (existing == null) {
-//                                mergedContacts[part.id] = part
-//                            } else {
-//                                existing.mergeWith(part)
-//                            }
-//                        }
-//
-//                        val end = System.currentTimeMillis()
-//                        val timeMillis = end - start
-//
-//                        allContacts = mergedContacts.values.toList()
                         val mergedContacts = mutableMapOf<String, Contact>()
                         for (part in partialContacts.values.flatten()) {
                             val existing = mergedContacts[part.id]
@@ -220,12 +207,16 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                                 existing.mergeWith(part)
                             }
                         }
-
+                        println( "Всего контактов до фильтрации: ${mergedContacts.size}")
+                        println( "Первые 5 ID до фильтрации: ${mergedContacts.keys.take(5)}")
                         // Шаг 2: Получаем ID контактов из телефонной книги (ContactsContract.Contacts)
                         val phoneBookContactIds = fetchPhoneBookContactIds()
+                        println(  "ID из телефонной книги: ${phoneBookContactIds.size}")
+                        println( "Первые 5 ID из телефонной книги: ${phoneBookContactIds.take(5)}")
 
                         // Шаг 3: Фильтруем только те контакты, которые есть в телефонной книге
                         val filteredContacts = mergedContacts.filterKeys { it in phoneBookContactIds }
+                        println(  "Контактов после фильтрации: ${filteredContacts.size}")
 
                         val end = System.currentTimeMillis()
                         val timeMillis = end - start
@@ -335,11 +326,12 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
     // Метод для получения ID контактов из ContactsContract.Contacts
     private fun fetchPhoneBookContactIds(): Set<String> {
         val contactIds = mutableSetOf<String>()
+        val selection = "${ContactsContract.Contacts.IN_VISIBLE_GROUP} = 1"
         val cursor = ContentResolverCompat.query(
             contentResolver,
             ContactsContract.Contacts.CONTENT_URI,
             arrayOf(ContactsContract.Contacts._ID),
-            null,
+            selection,
             null,
             null,
             null as android.os.CancellationSignal?
