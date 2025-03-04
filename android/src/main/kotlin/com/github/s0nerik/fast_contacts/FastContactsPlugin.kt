@@ -81,34 +81,34 @@ private enum class ContactPart {
 
     val contentUri: Uri
         get() = when (this) {
-                PHONES -> Phone.CONTENT_URI
-                EMAILS -> Email.CONTENT_URI
-                STRUCTURED_NAME -> ContactsContract.Data.CONTENT_URI
-                ORGANIZATION -> ContactsContract.Data.CONTENT_URI
-            }
+            PHONES -> Phone.CONTENT_URI
+            EMAILS -> Email.CONTENT_URI
+            STRUCTURED_NAME -> ContactsContract.Data.CONTENT_URI
+            ORGANIZATION -> ContactsContract.Data.CONTENT_URI
+        }
     val contactIdColumn: String
-        get() = when(this) {
+        get() = when (this) {
             PHONES -> Phone.CONTACT_ID
             EMAILS -> Email.CONTACT_ID
             STRUCTURED_NAME -> StructuredName.CONTACT_ID
             ORGANIZATION -> Organization.CONTACT_ID
         }
     val selection: String
-        get() = when(this) {
+        get() = when (this) {
             PHONES -> "${Phone.MIMETYPE} = ?"
             EMAILS -> "${Email.MIMETYPE} = ?"
             STRUCTURED_NAME -> "${StructuredName.MIMETYPE} = ?"
             ORGANIZATION -> "${Organization.MIMETYPE} = ?"
         }
     val selectionArgs: Array<String>
-        get() = when(this) {
+        get() = when (this) {
             PHONES -> arrayOf(Phone.CONTENT_ITEM_TYPE)
             EMAILS -> arrayOf(Email.CONTENT_ITEM_TYPE)
             STRUCTURED_NAME -> arrayOf(StructuredName.CONTENT_ITEM_TYPE)
             ORGANIZATION -> arrayOf(Organization.CONTENT_ITEM_TYPE)
         }
     val sortOrder: String
-        get() = when(this) {
+        get() = when (this) {
             PHONES -> "${Phone.CONTACT_ID} ASC"
             EMAILS -> "${Email.CONTACT_ID} ASC"
             STRUCTURED_NAME -> "${StructuredName.CONTACT_ID} ASC"
@@ -125,11 +125,14 @@ private enum class ContactPart {
                     ContactField.MIDDLE_NAME,
                     ContactField.FAMILY_NAME,
                     ContactField.NAME_SUFFIX -> STRUCTURED_NAME
+
                     ContactField.COMPANY,
                     ContactField.DEPARTMENT,
                     ContactField.JOB_DESCRIPTION -> ORGANIZATION
+
                     ContactField.PHONE_NUMBERS,
                     ContactField.PHONE_LABELS -> PHONES
+
                     ContactField.EMAIL_ADDRESSES,
                     ContactField.EMAIL_LABELS -> EMAILS
                 }
@@ -209,16 +212,18 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                                 existing.mergeWith(part)
                             }
                         }
-                        println( "Всего контактов до фильтрации: ${mergedContacts.size}")
-                        println( "Первые 5 ID до фильтрации: ${mergedContacts.keys.take(5)}")
+                        println("Всего контактов до фильтрации: ${mergedContacts.size}")
+                        println("Первые 5 ID до фильтрации: ${mergedContacts.keys.take(5)}")
                         // Шаг 2: Получаем ID контактов из телефонной книги (ContactsContract.Contacts)
+                        fetchPhoneBookContactIds()
                         val phoneBookContactIds = fetchPhoneBookContactIds()
-                        println(  "ID из телефонной книги: ${phoneBookContactIds.size}")
-                        println( "Первые 5 ID из телефонной книги: ${phoneBookContactIds.take(5)}")
+                        println("ID из телефонной книги: ${phoneBookContactIds.size}")
+                        println("Первые 5 ID из телефонной книги: ${phoneBookContactIds.take(5)}")
 
                         // Шаг 3: Фильтруем только те контакты, которые есть в телефонной книге
-                        val filteredContacts = mergedContacts.filterKeys { it in phoneBookContactIds }
-                        println(  "Контактов после фильтрации: ${filteredContacts.size}")
+                        val filteredContacts =
+                            mergedContacts.filterKeys { it in phoneBookContactIds }
+                        println("Контактов после фильтрации: ${filteredContacts.size}")
 
                         val end = System.currentTimeMillis()
                         val timeMillis = end - start
@@ -231,6 +236,7 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                     }
                 }
             }
+
             "getAllContactsPage" -> {
                 val args = call.arguments as Map<String, Any>
                 val from = args["from"] as Int
@@ -239,11 +245,13 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                 val page = allContacts.subList(from, to).map { it.asMap(fields = selectedFields) }
                 result.success(page)
             }
+
             "clearFetchedContacts" -> {
                 allContacts = emptyList()
                 selectedFields = emptySet()
                 result.success(null)
             }
+
             "getContactImage" -> {
                 val args = call.arguments as Map<String, String>
                 val contactId = args.getValue("id").toLong()
@@ -257,6 +265,7 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                     }
                 }
             }
+
             "getContact" -> {
                 val args = call.arguments as Map<String, Any>
                 val id = args["id"] as String
@@ -294,6 +303,7 @@ class FastContactsPlugin : FlutterPlugin, MethodCallHandler, LifecycleOwner, Vie
                     }
                 }
             }
+
             else -> result.notImplemented()
         }
     }
